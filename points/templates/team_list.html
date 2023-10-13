@@ -1,0 +1,37 @@
+<!-- points/templates/team_list.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Team List</title>
+</head>
+<body>
+    <h1>Team List</h1>
+    <table>
+        <tr>
+            <th>Logo</th>
+            <th>Team</th>
+            <th>Total Points (tp)</th>
+            <th>Points for (pp)</th>
+            <th>Points against (fp)</th>
+            <th>Wins</th>
+        </tr>
+        {% for team in teams %}
+        <tr>
+            <td>
+                {% if team.team.logo %}
+                    <img src="{{ team.team.logo.url }}" alt="{{ team.team.name }} Logo" width="50">
+                {% else %}
+                    No Logo
+                {% endif %}
+            </td>
+            <td>{{ team.team.name }}</td>
+            <td>{{ team.tp }}</td>
+            <td>{{ team.pp }}</td>
+            <td>{{ team.fp }}</td>
+            <td>{{ team.wins }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{% url 'download_image' %}" class="btn btn-primary">Download Image</a>
+</body>
+</html>
