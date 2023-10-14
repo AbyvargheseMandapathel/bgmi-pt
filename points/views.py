@@ -1,4 +1,3 @@
-# points/views.py
 from django.shortcuts import render
 from .models import Points, Team
 from PIL import Image, ImageDraw, ImageFont
@@ -40,12 +39,6 @@ def download_image(request):
     max_logo_width = boundary_right - boundary_left
     max_logo_height = boundary_bottom - boundary_top
 
-    # Calculate the position to center the logo within the boundary
-    def calculate_logo_position(logo_width, logo_height):
-        x = logo_x + (max_logo_width - logo_width) // 2
-        y = logo_y + (max_logo_height - logo_height) // 2
-        return x, y
-
     # Create spacing between teams
     vertical_spacing = 58
 
@@ -75,18 +68,21 @@ def download_image(request):
         logo = logo.resize((width, height), Image.LANCZOS)
 
         # Calculate the position to center the logo within the boundary
-        x, y = calculate_logo_position(width, height)
+        x, y = logo_x + (max_logo_width - width) // 2, logo_y + (max_logo_height - height) // 2
 
         # Paste the logo onto the image with transparency at the calculated position
         image.paste(logo, (x, y), logo)
 
         # Set the coordinates for the team name
         team_name_x = 331  # Fixed x-coordinate
-        team_name_coords = (team_name_x, logo_y)  # Team name at the same y-coordinate as the logo
+        team_name_y = logo_y  # Team name at the same y-coordinate as the logo
 
         # Draw team name with letter spacing
         text = f"{team.team.name}"
-        draw.text(team_name_coords, text, fill="white", font=font, spacing=letter_spacing)
+        draw.text((team_name_x, team_name_y), text, fill="white", font=font, spacing=letter_spacing)
+        
+        # Increment the y-coordinate for vertical spacing
+        team_name_y += vertical_spacing
 
         # Set the coordinates for other elements
         wins_x = 531
