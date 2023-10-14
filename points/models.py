@@ -1,6 +1,6 @@
 # points/models.py
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save,pre_delete
 from django.dispatch import receiver
 
 class Team(models.Model):
@@ -35,7 +35,7 @@ class Points(models.Model):
         return f"Points for {self.team.name}"
 
 @receiver(post_save, sender=MatchResult)
-def update_points(sender, instance, **kwargs):
+def update_points_on_match_result_save(sender, instance, **kwargs):
     # Update Points model whenever a MatchResult is added or updated
     points, created = Points.objects.get_or_create(team=instance.team)
     match_results = MatchResult.objects.filter(team=instance.team)
@@ -44,5 +44,17 @@ def update_points(sender, instance, **kwargs):
     points.matches = match_results.count()
     points.fp = match_results.aggregate(fp_sum=models.Sum('fp'))['fp_sum'] or 0
     points.pp = match_results.aggregate(pp_sum=models.Sum('pp'))['pp_sum'] or 0
+    points.tp = points.fp + points.pp
+    points.save()
+
+@receiver(pre_delete, sender=MatchResult)
+def update_points_on_match_result_delete(sender, instance, **kwargs):
+    # Subtract points when a MatchResult is deleted
+    points, created = Points.objects.get_or_create(team=instance.team)
+    points.matches -= 1
+    if instance.wins:
+        points.wins -= 1
+    points.fp -= instance.fp
+    points.pp -= instance.pp
     points.tp = points.fp + points.pp
     points.save()
