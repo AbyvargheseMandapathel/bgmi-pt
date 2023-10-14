@@ -30,7 +30,7 @@ def download_image(request):
     teams = Points.objects.order_by('-tp', '-pp', '-fp', '-wins')
 
     # Define the initial coordinates for the team logo and boundary
-    logo_x, logo_y = 252, 444
+    logo_x, logo_y = 252, 444  # Initial position for the first team
     boundary_left = 252
     boundary_right = 316
     boundary_top = 444
@@ -80,38 +80,25 @@ def download_image(request):
         # Paste the logo onto the image with transparency at the calculated position
         image.paste(logo, (x, y), logo)
 
-        # Adjust the x coordinate to create space for the team name
-        x += max_logo_width + 20
+        # Set the coordinates for the team name
+        team_name_x = 331  # Fixed x-coordinate
+        team_name_coords = (team_name_x, logo_y)  # Team name at the same y-coordinate as the logo
 
         # Draw team name with letter spacing
         text = f"{team.team.name}"
-        draw.text((x, logo_y), text, fill="white", font=font, spacing=letter_spacing)
+        draw.text(team_name_coords, text, fill="white", font=font, spacing=letter_spacing)
 
-        # Define the horizontal offset to separate team name and points
-        x += 200
+        # Set the coordinates for other elements
+        wins_x = 531
+        other_elements_coords = (wins_x, logo_y)  # Wins, TP, PP, FP at the same y-coordinate as the logo
 
-        text = f"Wins: {team.wins}"
-        draw.text((x, logo_y), text, fill="white", font=font, spacing=letter_spacing)
+        # Draw other elements like Wins, TP, PP, FP
+        elements = [f"{team.wins}", f"{team.tp}", f"{team.pp}", f"{team.fp}"]
+        for element in elements:
+            draw.text(other_elements_coords, element, fill="white", font=font, spacing=letter_spacing)
+            other_elements_coords = (other_elements_coords[0] + 150, other_elements_coords[1])  # Adjust x-coordinate for the next element
 
-        x += 150
-
-        text = f"TP: {team.tp}"
-        draw.text((x, logo_y), text, fill="white", font=font, spacing=letter_spacing)
-
-        x += 150
-
-        text = f"PP: {team.pp}"
-        draw.text((x, logo_y), text, fill="white", font=font, spacing=letter_spacing)
-
-        x += 150
-
-        text = f"FP: {team.fp}"
-        draw.text((x, logo_y), text, fill="white", font=font, spacing=letter_spacing)
-
-        # Reset x to its initial position
-        logo_x = 252
-
-        # Move to the next row by adding the vertical spacing
+        # Update the y-coordinate for the next team (58 pixels below the current one)
         logo_y += vertical_spacing
 
     # Create an HttpResponse with image content
