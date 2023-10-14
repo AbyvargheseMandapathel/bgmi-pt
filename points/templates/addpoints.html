@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Points</title>
+</head>
+<body>
+    <h1>Add Points</h1>
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="team">Team:</label>
+        <select name="team" id="team">
+            {% for team in teams %}
+                <option value="{{ team.id }}">{{ team.name }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label for="fp">FP:</label>
+        <input type="number" name="fp" id="fp"><br><br>
+
+        <label for="pp">PP:</label>
+        <input type="number" name="pp" id="pp"><br><br>
+
+        <input type="submit" value="Add Points">
+    </form>
+</body>
+</html>

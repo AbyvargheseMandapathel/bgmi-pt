@@ -1,9 +1,10 @@
-from django.shortcuts import render
-from .models import Points
+from django.db.models import OuterRef, Subquery
+from django.shortcuts import render, redirect
+from .models import Points, MatchResult, Team
 from PIL import Image, ImageDraw, ImageFont
 from django.http import HttpResponse
-from django.db.models import Sum  # Import Sum
-
+from django.db.models import Sum, Max, F
+from django.dispatch import receiver
 
 def team_list(request):
     teams = Points.objects.all().order_by('-tp', '-pp', '-fp', '-wins')
@@ -13,7 +14,7 @@ def team_list(request):
 def download_image(request):
     # Open your image
     image_path = "template.jpg"
-    image = Image.open(image_path).convert("RGBA")  # Convert to RGBA mode
+    image = Image.open(image_path).convert("RGBA")
 
     # Create a drawing context
     draw = ImageDraw.Draw(image)
@@ -48,9 +49,19 @@ def download_image(request):
         'team_name_y': 460  # Initial position for the first team's name
     }
 
-    total_matches = Points.objects.aggregate(Sum('matches'))['matches__sum']
+    # Calculate the number of matches for the day
+    total_matches = Points.objects.aggregate(Sum('matches'))['matches__sum'] or 0
 
-    # Define coordinates for winning team posters
+    # Display logos of the winning teams based on the match number
+    last_six_matches = (
+        MatchResult.objects
+        .filter(matches__in=Subquery(
+            MatchResult.objects.values('matches').order_by('-matches')[:6]
+        ))
+        .order_by('-matches')
+    )
+
+    # Define coordinates for the winning team posters
     poster_coordinates = {
         'left_x': 200,
         'left_top_y': 1390,
@@ -67,9 +78,17 @@ def download_image(request):
     poster_y_top = poster_coordinates['left_top_y']
     poster_y_bottom = poster_coordinates['left_bottom_y']
 
-    for team in teams[:5]:  # Display logos of the previous 5 teams
+    # Determine the number of winning teams to display
+    num_winning_teams = total_matches % 6
+
+    # Check if num_winning_teams is 0 and set it to 6
+    if num_winning_teams == 0:
+        num_winning_teams = 6
+
+    for match in last_six_matches[:num_winning_teams]:
+        team = match.team
         # Load the team logo without converting it
-        logo = Image.open(team.team.logo.path).convert("RGBA")
+        logo = Image.open(team.logo.path).convert("RGBA")
 
         # Ensure the output format is RGBA
         if logo.mode != 'RGBA':
@@ -157,3 +176,35 @@ def download_image(request):
     response["Content-Disposition"] = 'attachment; filename="team_standings.png"'
 
     return response
+
+def add_points(request):
+    if request.method == "POST":
+        team_id = request.POST.get("team")
+        fp = request.POST.get("fp")
+        pp = request.POST.get("pp")
+
+        # Validate and process the input data as needed
+        if team_id is not None and fp is not None and pp is not None:
+            team = Team.objects.get(id=team_id)
+            wins = 0  # Initialize wins to 0
+
+            # Automatically calculate wins (increment if pp == 15)
+            if pp == "15":  # Compare with a string "15"
+                wins = 1
+
+            # Calculate the match number for the team
+            match_number = (
+                MatchResult.objects
+                .filter(team=team)
+                .aggregate(max_match_number=Max('matches'))['max_match_number'] or 0
+            )
+            match_number += 1
+
+            # Create a new MatchResult instance
+            MatchResult.objects.create(team=team, fp=fp, pp=pp, wins=wins, matches=match_number)
+
+            return redirect('add_points')  # Redirect to the same page
+
+    teams = Team.objects.all()
+    context = {'teams': teams}
+    return render(request, 'addpoints.html', context)
