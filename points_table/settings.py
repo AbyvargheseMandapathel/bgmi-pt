@@ -31,7 +31,10 @@ SECRET_KEY = 'django-insecure-8a5enhs#th#7!_f51+^hjxoj!r-x514o-j1t$w09_kpboj*vr8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# settings.py
+
+ALLOWED_HOSTS = ['point-table.onrender.com']
+
 
 
 # Application definition
