@@ -1,8 +1,7 @@
 from django.shortcuts import render
-from .models import Points, Team
+from .models import Points
 from PIL import Image, ImageDraw, ImageFont
 from django.http import HttpResponse
-from points.models import Points
 
 def team_list(request):
     teams = Points.objects.all().order_by('-tp', '-pp', '-fp', '-wins')
@@ -42,6 +41,9 @@ def download_image(request):
     # Create spacing between teams
     vertical_spacing = 58
 
+    # Initialize team_name_y
+    team_name_y = 460  # Initial position for the first team's name
+
     for team in teams:
         # Load the team logo without converting it
         logo = Image.open(team.team.logo.path).convert("RGBA")  # Convert to RGBA mode
@@ -75,24 +77,53 @@ def download_image(request):
 
         # Set the coordinates for the team name
         team_name_x = 331  # Fixed x-coordinate
-        team_name_y = logo_y  # Team name at the same y-coordinate as the logo
 
         # Draw team name with letter spacing
         text = f"{team.team.name}"
         draw.text((team_name_x, team_name_y), text, fill="white", font=font, spacing=letter_spacing)
         
+        # Set the coordinates for team.fp (next field)
+        fp_x = 538  # X-coordinate for team.fp
+        fp_y = team_name_y  # Same y-coordinate as team name
+
+        # Draw team.fp with letter spacing
+        text = f"{team.fp}"
+        draw.text((fp_x, fp_y), text, fill="white", font=font, spacing=letter_spacing)
+
+        # Set the coordinates for team.pp (next field)
+        pp_x = 646  # X-coordinate for team.pp
+        pp_y = team_name_y  # Same y-coordinate as team name
+
+        # Draw team.pp with letter spacing
+        text = f"{team.pp}"
+        draw.text((pp_x, pp_y), text, fill="white", font=font, spacing=letter_spacing)
+
+        # Set the coordinates for team.wins (next field)
+        wins_x = 730  # X-coordinate for team.wins
+        wins_y = team_name_y  # Same y-coordinate as team name
+
+        # Draw team.wins with letter spacing
+        text = f"{team.wins}"
+        draw.text((wins_x, wins_y), text, fill="white", font=font, spacing=letter_spacing)
+
+        # Set the coordinates for team.tp (next field)
+        tp_x = 824  # X-coordinate for team.tp
+        tp_y = team_name_y  # Same y-coordinate as team name
+
+        # Draw team.tp with letter spacing
+        text = f"{team.tp}"
+        draw.text((tp_x, tp_y), text, fill="white", font=font, spacing=letter_spacing)
+
         # Increment the y-coordinate for vertical spacing
         team_name_y += vertical_spacing
 
-        # Set the coordinates for other elements
-        wins_x = 531
-        other_elements_coords = (wins_x, logo_y)  # Wins, TP, PP, FP at the same y-coordinate as the logo
+        # Set the coordinates for other elements (if needed)
+        other_elements_x = 531
+        other_elements_coords = (other_elements_x, logo_y)  # TP at the same y-coordinate as the logo
 
-        # Draw other elements like Wins, TP, PP, FP
-        elements = [f"{team.wins}", f"{team.tp}", f"{team.pp}", f"{team.fp}"]
-        for element in elements:
-            draw.text(other_elements_coords, element, fill="white", font=font, spacing=letter_spacing)
-            other_elements_coords = (other_elements_coords[0] + 150, other_elements_coords[1])  # Adjust x-coordinate for the next element
+        # Draw other elements like TP (if needed)
+        # text = f"{team.tp}"
+        # draw.text(other_elements_coords, text, fill="white", font=font, spacing=letter_spacing)
 
         # Update the y-coordinate for the next team (58 pixels below the current one)
         logo_y += vertical_spacing
