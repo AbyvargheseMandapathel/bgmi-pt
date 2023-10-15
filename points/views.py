@@ -151,8 +151,8 @@ def download_image(request):
         x = coordinates['logo_x'] + (coordinates['max_logo_width'] - width) // 2
         y = coordinates['logo_y'] + (coordinates['max_logo_height'] - height) // 2
 
-        # Paste the logo onto the image with transparency at the calculated position
-        image.paste(logo, (x, y), logo)
+        # # Paste the logo onto the image with transparency at the calculated position
+        # image.paste(logo, (x, y), logo)
 
         # Draw team name with letter spacing
         text = f"{team.team.name}"
