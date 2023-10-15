@@ -4,7 +4,9 @@ from .models import Points, MatchResult, Team
 from PIL import Image, ImageDraw, ImageFont
 from django.http import HttpResponse
 from django.db.models import Sum, Max, F
-from django.dispatch import receiver
+from django.db import IntegrityError
+from django.http import HttpResponseServerError
+from django.http import JsonResponse
 
 def team_list(request):
     teams = Points.objects.all().order_by('-tp', '-pp', '-fp', '-wins')
@@ -177,34 +179,55 @@ def download_image(request):
 
     return response
 
+from django.db import IntegrityError
+
 def add_points(request):
     if request.method == "POST":
-        team_id = request.POST.get("team")
-        fp = request.POST.get("fp")
-        pp = request.POST.get("pp")
+        teams = Team.objects.all()
+        num_teams = len(teams)
 
-        # Validate and process the input data as needed
-        if team_id is not None and fp is not None and pp is not None:
-            team = Team.objects.get(id=team_id)
-            wins = 0  # Initialize wins to 0
+        # Create a list to store the input data for all teams
+        team_data = []
 
-            # Automatically calculate wins (increment if pp == 15)
-            if pp == "15":  # Compare with a string "15"
-                wins = 1
+        try:
+            for i in range(1, num_teams + 1):
+                team_id = request.POST.get(f"team_{i}")
+                fp = request.POST.get(f"fp_{i}")
+                pp = request.POST.get(f"pp_{i}")
 
-            # Calculate the match number for the team
-            match_number = (
-                MatchResult.objects
-                .filter(team=team)
-                .aggregate(max_match_number=Max('matches'))['max_match_number'] or 0
-            )
-            match_number += 1
+                if team_id is not None and pp is not None and pp.strip():
+                    team = Team.objects.get(id=team_id)
+                    wins = 0
 
-            # Create a new MatchResult instance
-            MatchResult.objects.create(team=team, fp=fp, pp=pp, wins=wins, matches=match_number)
+                    if pp == "15":
+                        wins = 1
 
-            return redirect('add_points')  # Redirect to the same page
+                    match_number = (
+                        MatchResult.objects
+                        .filter(team=team)
+                        .aggregate(max_match_number=Max('matches'))['max_match_number'] or 0
+                    )
+                    match_number += 1
 
-    teams = Team.objects.all()
-    context = {'teams': teams}
+                    match_result = MatchResult(team=team, fp=fp, pp=pp, wins=wins, matches=match_number)
+                    match_result.save()
+
+                    team_data.append({'name': team.name, 'fp': fp, 'pp': pp})
+
+        except IntegrityError as e:
+            return HttpResponseServerError(f"Database error: {str(e)}")
+
+        context = {'teams': Team.objects.all()}  # Retrieve all teams here
+        return render(request, 'addpoints.html', context)
+
+    context = {'teams': Team.objects.all()}  # Retrieve all teams here
     return render(request, 'addpoints.html', context)
+
+
+
+def update_rankings(request):
+    teams = Points.objects.all().order_by('-tp', '-pp', '-fp', '-wins')
+    data = [{'team_name': team.team.name, 'tp': team.tp, 'pp': team.pp, 'fp': team.fp, 'wins': team.wins, 'logo_url': team.team.logo.url} for team in teams]
+    return JsonResponse(data, safe=False)
+
+

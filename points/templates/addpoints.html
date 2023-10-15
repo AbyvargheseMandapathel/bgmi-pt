@@ -2,26 +2,99 @@
 <html>
 <head>
     <title>Add Points</title>
+    <style>
+        /* Style for the two columns */
+        .container {
+            display: flex;
+        }
+        
+        .input-column {
+            flex: 1;
+            padding: 10px;
+        }
+        
+        .table-column {
+            flex: 1;
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Add Points</h1>
-    <form method="post">
+    <form method="post" action="{% url 'add_points' %}">
         {% csrf_token %}
+        <div class="container">
+            <!-- Input fields column (Left) -->
+            <div class="input-column">
+                <!-- Add input fields for up to 8 teams -->
+                {% for i in "12345678" %}
+                <div class="team-container">
+                    <label for="team_{{ i }}">Team {{ i }}:</label>
+                    <select name="team_{{ i }}" id="team_{{ i }}">
+                        <option value="">Select a Team</option> <!-- Default empty option -->
+                        {% for team in teams %}
+                            <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select><br><br>
 
-        <label for="team">Team:</label>
-        <select name="team" id="team">
-            {% for team in teams %}
-                <option value="{{ team.id }}">{{ team.name }}</option>
-            {% endfor %}
-        </select><br><br>
+                    <label for="fp_{{ i }}">FP:</label>
+                    <input type="number" name="fp_{{ i }}" id="fp_{{ i }}"><br><br>
 
-        <label for="fp">FP:</label>
-        <input type="number" name="fp" id="fp"><br><br>
+                    <label for="pp_{{ i }}">PP:</label>
+                    <input type="number" name="pp_{{ i }}" id="pp_{{ i }}"><br><br>
 
-        <label for="pp">PP:</label>
-        <input type="number" name="pp" id="pp"><br><br>
+                    <!-- OK button to show the table for this team -->
+                    <input type="button" value="OK" onclick="showTeamTable('{{ i }}')">
+                </div>
+                {% endfor %}
+            </div>
 
-        <input type="submit" value="Add Points">
+            <!-- Real-time table column (Right) -->
+            <div class="table-column">
+                <!-- Tables for each team -->
+                {% for i in "12345678" %}
+                    <table border="1" class="team-table" id="team_table_{{ i }}" style="display: none;">
+                        <tr>
+                            <th>Team Name</th>
+                            <th>FP</th>
+                            <th>PP</th>
+                            <th>TP</th>
+                        </tr>
+                    </table>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <input type="submit" value="Submit">
     </form>
+    
+    <script>
+        var teamsToAdd = []; // Array to store teams to add
+        
+        function showTeamTable(teamNum) {
+            var teamTable = document.getElementById('team_table_' + teamNum);
+            var teamSelect = document.getElementById('team_' + teamNum);
+            var teamName = teamSelect.options[teamSelect.selectedIndex].text;
+            var fpValue = document.getElementById('fp_' + teamNum).value;
+            var ppValue = document.getElementById('pp_' + teamNum).value;
+            
+            // Add team data to the table
+            var row = teamTable.insertRow(1);
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+            var cell4 = row.insertCell(3);
+            cell1.innerHTML = teamName;
+            cell2.innerHTML = fpValue === '' ? '' : fpValue;
+            cell3.innerHTML = ppValue === '' ? '' : ppValue;
+            cell4.innerHTML = (fpValue === '' ? 0 : parseInt(fpValue)) + (ppValue === '' ? 0 : parseInt(ppValue));
+            
+            // Set the display property to 'table' to make it visible
+            teamTable.style.display = 'table';
+            
+            // Store the team data to add
+            teamsToAdd.push({ id: teamSelect.value, name: teamName, fp: fpValue, pp: ppValue });
+        }
+    </script>
 </body>
 </html>

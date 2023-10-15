@@ -33,7 +33,7 @@ DEBUG = True
 
 # settings.py
 
-ALLOWED_HOSTS = ['point-table.onrender.com']
+ALLOWED_HOSTS = ['point-table.onrender.com','*']
 
 
 

@@ -1,37 +1,181 @@
-<!-- points/templates/team_list.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Team List</title>
+    <title>Esports Ranking</title>
+    <!-- Add Bootstrap CSS (you can download or link to a CDN) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Add jQuery (you can download or link to a CDN) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+        }
+
+        .container {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        table.table {
+            background-color: #2b2b2b;
+            border-radius: 10px;
+        }
+
+        table.table thead {
+            background-color: #222222;
+            color: #fff;
+        }
+
+        .team-container {
+            margin-bottom: 20px;
+            animation-duration: 0.5s;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            transition: transform 0.5s ease; /* Animation for team movement */
+        }
+
+        .btn-primary {
+            background-color: #fbc02d;
+            border-color: #fbc02d;
+        }
+
+        .btn-primary:hover {
+            background-color: #fbc02d;
+            border-color: #fbc02d;
+        }
+
+        @keyframes jumpUp {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes jumpDown {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(5px);
+            }
+        }
+
+        .jump-up {
+            animation-name: jumpUp;
+        }
+
+        .jump-down {
+            animation-name: jumpDown;
+        }
+    </style>
 </head>
 <body>
-    <h1>Team List</h1>
-    <table>
-        <tr>
-            <th>Logo</th>
-            <th>Team</th>
-            <th>Total Points (tp)</th>
-            <th>Points for (pp)</th>
-            <th>Points against (fp)</th>
-            <th>Wins</th>
-        </tr>
-        {% for team in teams %}
-        <tr>
-            <td>
-                {% if team.team.logo %}
-                    <img src="{{ team.team.logo.url }}" alt="{{ team.team.name }} Logo" width="50">
-                {% else %}
-                    No Logo
-                {% endif %}
-            </td>
-            <td>{{ team.team.name }}</td>
-            <td>{{ team.tp }}</td>
-            <td>{{ team.pp }}</td>
-            <td>{{ team.fp }}</td>
-            <td>{{ team.wins }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="{% url 'download_image' %}" class="btn btn-primary">Download Image</a>
+    <div class="container">
+        <h1>Esports Ranking</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Logo</th>
+                    <th>Team</th>
+                    <th>Total Points (tp)</th>
+                    <th>Points for (pp)</th>
+                    <th>Points against (fp)</th>
+                    <th>Wins</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in teams %}
+                <tr id="team_container_{{ forloop.counter }}">
+                    <td>
+                        {% if team.team.logo %}
+                            <img src="{{ team.team.logo.url }}" alt="{{ team.team.name }} Logo" width="50">
+                        {% else %}
+                            No Logo
+                        {% endif %}
+                    </td>
+                    <td>{{ team.team.name }}</td>
+                    <td>{{ team.tp }}</td>
+                    <td>{{ team.pp }}</td>
+                    <td>{{ team.fp }}</td>
+                    <td>{{ team.wins }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <a href="{% url 'download_image' %}" class="btn btn-primary">Download Standings Image</a>
+    <script>
+        function updateRankingsTable() {
+            // Fetch updated data from the server using AJAX
+            $.ajax({
+                url: '{% url "update_rankings" %}',
+                method: 'GET',
+                success: function (data) {
+                    // Get the existing table
+                    const tableBody = $('tbody');
+
+                    // Get the existing rows for comparison
+                    const existingRows = tableBody.find('tr');
+
+                    // Clear the current table
+                    tableBody.empty();
+
+                    // Append the updated data to the table
+                    for (let i = 0; i < data.length; i++) {
+                        let row = '<tr class="team-container"';
+                        row += ' id="team_container_' + (i + 1) + '"';
+                        row += '>';
+                        row += '<td><img src="' + data[i].logo_url + '" alt="' + data[i].team_name + ' Logo" width="50"></td>';
+                        row += '<td>' + data[i].team_name + '</td>';
+                        row += '<td>' + data[i].tp + '</td>';
+                        row += '<td>' + data[i].pp + '</td>';
+                        row += '<td>' + data[i].fp + '</td>';
+                        row += '<td>' + data[i].wins + '</td>';
+                        row += '</tr>';
+
+                        // Append the row to the table
+                        tableBody.append(row);
+
+                        // Check if an animation is needed
+                        if (existingRows.length === data.length) {
+                            if (i > 0) {
+                                const newRow = tableBody.find('tr').eq(i);
+                                const prevRow = existingRows.eq(i - 1);
+
+                                // Add animation classes to shift the new row upwards
+                                newRow.addClass('jump-up');
+                                newRow.on('animationend', function () {
+                                    newRow.removeClass('jump-up');
+                                    prevRow.after(newRow);
+
+                                    // Reorder row IDs
+                                    existingRows.each(function (index, element) {
+                                        element.id = 'team_container_' + (index + 1);
+                                    });
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Call the updateRankingsTable function every 10 seconds
+        setInterval(updateRankingsTable, 10000);
+    </script>
+
+    <script>
+        // Reload the page every 10 seconds to reflect changes
+        setInterval(function () {
+            location.reload();
+        }, 10000);
+    </script>
 </body>
 </html>
