@@ -84,10 +84,11 @@
                 <tr>
                     <th>Logo</th>
                     <th>Team</th>
-                    <th>Total Points (tp)</th>
-                    <th>Points for (pp)</th>
-                    <th>Points against (fp)</th>
+                    <th>Matches</th>
                     <th>Wins</th>
+                    <th>Position Points</th>
+                    <th>Kill Points</th>
+                    <th>Total Points (tp)</th>
                 </tr>
             </thead>
             <tbody>
@@ -101,10 +102,13 @@
                         {% endif %}
                     </td>
                     <td>{{ team.team.name }}</td>
-                    <td>{{ team.tp }}</td>
+                    <td>{{ team.matches }}</td>
+                    <td>{{ team.wins }}</td>
                     <td>{{ team.pp }}</td>
                     <td>{{ team.fp }}</td>
-                    <td>{{ team.wins }}</td>
+                    <td>{{ team.tp }}</td>
+                    
+                    
                 </tr>
                 {% endfor %}
             </tbody>

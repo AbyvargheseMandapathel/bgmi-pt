@@ -230,4 +230,3 @@ def update_rankings(request):
     data = [{'team_name': team.team.name, 'tp': team.tp, 'pp': team.pp, 'fp': team.fp, 'wins': team.wins, 'logo_url': team.team.logo.url} for team in teams]
     return JsonResponse(data, safe=False)
 
-
